@@ -1,13 +1,19 @@
 import React from "react";
-import { createRoot } from "react-dom/client";
-import { ThirdwebProvider } from "thirdweb/react";
-import App from './App'
+import ReactDOM from "react-dom/client";
+import { BrowserRouter as Router } from "react-router-dom";
+import { ThirdwebProvider } from "@thirdweb-dev/react";
+import { Sepolia } from "@thirdweb-dev/chains";
+
+import App from "./App";
 import "./index.css";
 
-createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <ThirdwebProvider>
+// You can adjust the chain as needed - this example uses Sepolia
+const root = ReactDOM.createRoot(document.getElementById("root"));
+
+root.render(
+  <ThirdwebProvider activeChain={Sepolia}>
+    <Router>
       <App />
-    </ThirdwebProvider>
-  </React.StrictMode>
+    </Router>
+  </ThirdwebProvider>
 );
