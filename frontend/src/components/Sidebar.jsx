@@ -26,29 +26,57 @@ const Icon = ({ styles, name, imgUrl, isActive, disabled, handleClick }) => (
 );
 
 // Confirmation Dialog Component
-const ConfirmationDialog = ({ isOpen, onClose, onConfirm }) => {
+const ConfirmationDialog = ({ isOpen, onClose, onConfirm, isConnected }) => {
+  const { connect } = useStateContext(); // Get the connect function from context
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
       <div className="bg-[#1c1c24] p-6 rounded-[20px] shadow-xl w-[300px]">
-        <h3 className="text-white text-lg font-bold mb-4">Confirm Logout</h3>
+        <h3 className="text-white text-lg font-bold mb-4">
+          {isConnected ? "Confirm Logout" : "Wallet Connection Required"}
+        </h3>
         <p className="text-gray-300 mb-6">
-          Are you sure you want to disconnect your wallet?
+          {isConnected
+            ? "Are you sure you want to disconnect your wallet?"
+            : "Please connect to the MetaMask wallet"}
         </p>
-        <div className="flex justify-end gap-4">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-[10px] bg-gray-600 text-white hover:bg-gray-700 transition"
-          >
-            No
-          </button>
-          <button
-            onClick={onConfirm}
-            className="px-4 py-2 rounded-[10px] bg-[#8c6dfd] text-white hover:bg-[#7c5ffd] transition"
-          >
-            Yes
-          </button>
+        <div className="flex justify-between gap-4">
+          {isConnected ? (
+            <>
+              <button
+                onClick={onClose}
+                className="flex-1 px-4 py-2 rounded-[10px] bg-gray-600 text-white hover:bg-gray-700 transition"
+              >
+                No
+              </button>
+              <button
+                onClick={onConfirm}
+                className="flex-1 px-4 py-2 rounded-[10px] bg-[#8c6dfd] text-white hover:bg-[#7c5ffd] transition"
+              >
+                Yes
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={onClose}
+                className="flex-1 px-4 py-2 rounded-[10px] bg-gray-600 text-white hover:bg-gray-700 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  connect();
+                  onClose();
+                }}
+                className="flex-1 px-4 py-2 rounded-[10px] bg-[#8c6dfd] text-white hover:bg-[#7c5ffd] transition"
+              >
+                Connect
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -65,13 +93,16 @@ const Sidebar = () => {
   const address = context?.address;
   const disconnect = context?.disconnect;
 
+  // Check if wallet is connected based on address existence
+  const isWalletConnected = !!address;
+
   const handleLogoutClick = () => {
     setIsLogoutDialogOpen(true);
   };
 
   const handleConfirmLogout = () => {
-    // Disconnect wallet if we have an address and disconnect function
-    if (address && disconnect) {
+    // Only disconnect if wallet is connected and disconnect function exists
+    if (isWalletConnected && disconnect) {
       disconnect();
     }
 
@@ -90,8 +121,9 @@ const Sidebar = () => {
       <Link to="/">
         <Icon styles="w-[52px] h-[52px] bg-[#2c2f32]" imgUrl={logo} />
       </Link>
+
       <div className="flex-1 flex flex-col justify-between items-center bg-[#1c1c24] rounded-[20px] w-[76px] py-4 mt-12">
-        <div className="flex flex-col justify-center items-center gap-3">
+        <div className="flex flex-col justify-center items-center gap-10">
           {navlinks.map((link) => (
             <Icon
               key={link.name}
@@ -109,7 +141,6 @@ const Sidebar = () => {
             />
           ))}
         </div>
-        <Icon styles="bg-[#1c1c24] shadow-secondary" imgUrl={sun} />
       </div>
 
       {/* Confirmation Dialog */}
@@ -117,6 +148,7 @@ const Sidebar = () => {
         isOpen={isLogoutDialogOpen}
         onClose={() => setIsLogoutDialogOpen(false)}
         onConfirm={handleConfirmLogout}
+        isConnected={isWalletConnected}
       />
     </div>
   );

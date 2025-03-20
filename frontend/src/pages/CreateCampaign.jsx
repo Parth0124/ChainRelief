@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
-
 import { useStateContext } from "../context";
 import { money } from "../assets";
 import { CustomButton, FormField, Loader } from "../components";
@@ -20,13 +19,34 @@ const CreateCampaign = () => {
     image: "",
   });
 
+  // Add custom styles for the date input - green calendar icon, but normal placeholder text
+  const dateInputStyles = `
+    ::-webkit-calendar-picker-indicator {
+      filter: invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(118%) contrast(119%);
+      cursor: pointer;
+    }
+    
+    /* Reset any custom colors to match other input placeholders */
+    input[type="date"].date-input::-webkit-datetime-edit {
+      color: inherit;
+      opacity: 0.6;
+    }
+    
+    input[type="date"].date-input::-webkit-datetime-edit-fields-wrapper,
+    input[type="date"].date-input::-webkit-datetime-edit-text,
+    input[type="date"].date-input::-webkit-datetime-edit-month-field,
+    input[type="date"].date-input::-webkit-datetime-edit-day-field,
+    input[type="date"].date-input::-webkit-datetime-edit-year-field {
+      color: inherit;
+    }
+  `;
+
   const handleFormFieldChange = (fieldName, e) => {
     setForm({ ...form, [fieldName]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     checkIfImage(form.image, async (exists) => {
       if (exists) {
         setIsLoading(true);
@@ -51,7 +71,6 @@ const CreateCampaign = () => {
           Start a Campaign
         </h1>
       </div>
-
       <form
         onSubmit={handleSubmit}
         className="w-full mt-[65px] flex flex-col gap-[30px]"
@@ -72,7 +91,6 @@ const CreateCampaign = () => {
             handleChange={(e) => handleFormFieldChange("title", e)}
           />
         </div>
-
         <FormField
           labelName="Story *"
           placeholder="Write your story"
@@ -80,18 +98,6 @@ const CreateCampaign = () => {
           value={form.description}
           handleChange={(e) => handleFormFieldChange("description", e)}
         />
-
-        <div className="w-full flex justify-start items-center p-4 bg-[#8c6dfd] h-[120px] rounded-[10px]">
-          <img
-            src={money}
-            alt="money"
-            className="w-[40px] h-[40px] object-contain"
-          />
-          <h4 className="font-epilogue font-bold text-[25px] text-white ml-[20px]">
-            You will get 100% of the raised amount
-          </h4>
-        </div>
-
         <div className="flex flex-wrap gap-[40px]">
           <FormField
             labelName="Goal *"
@@ -100,15 +106,18 @@ const CreateCampaign = () => {
             value={form.target}
             handleChange={(e) => handleFormFieldChange("target", e)}
           />
-          <FormField
-            labelName="End Date *"
-            placeholder="End Date"
-            inputType="date"
-            value={form.deadline}
-            handleChange={(e) => handleFormFieldChange("deadline", e)}
-          />
+          <div className="date-input-container">
+            <style>{dateInputStyles}</style>
+            <FormField
+              labelName="End Date *"
+              placeholder="End Date"
+              inputType="date"
+              value={form.deadline}
+              handleChange={(e) => handleFormFieldChange("deadline", e)}
+              additionalClass="date-input"
+            />
+          </div>
         </div>
-
         <FormField
           labelName="Campaign image *"
           placeholder="Place image URL of your campaign"
@@ -116,7 +125,6 @@ const CreateCampaign = () => {
           value={form.image}
           handleChange={(e) => handleFormFieldChange("image", e)}
         />
-
         <div className="flex justify-center items-center mt-[40px]">
           <CustomButton
             btnType="submit"
