@@ -1,3 +1,105 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Main background and text colors */
+:root {
+    --background: #13131a;
+    --foreground: #ffffff;
+    --card-bg: #1c1c24;
+    --sidebar-bg: #1c1c24;
+    --button-bg: #8c6dfd;
+    --button-hover: #7c5ffd;
+    --sidebar-icon-bg: #2c2f32;
+    --border-color: #3a3a43;
+    --text-primary: #ffffff;
+    --text-secondary: #808191;
+}
+
+/* Light theme variables */
+html.light-mode {
+    --background: #f8f8f8;
+    --foreground: #1c1c24;
+    --card-bg: #ffffff;
+    --sidebar-bg: #ffffff;
+    --button-bg: #8c6dfd;
+    --button-hover: #7c5ffd;
+    --sidebar-icon-bg: #e0e0e0;
+    --border-color: #e6e8eb;
+    --text-primary: #1c1c24;
+    --text-secondary: #4b5264;
+}
+
+/* Apply variables to elements */
+body {
+    background-color: var(--background);
+    color: var(--foreground);
+}
+
+/* Main app background - very important to fix */
+.bg-\[\#13131a\] {
+    background-color: var(--background) !important;
+}
+
+/* Card backgrounds */
+.bg-\[\#1c1c24\] {
+    background-color: var(--card-bg) !important;
+}
+
+/* Text colors */
+.text-white {
+    color: var(--text-primary) !important;
+}
+
+.text-\[\#808191\] {
+    color: var(--text-secondary) !important;
+}
+
+/* Sidebar icon backgrounds */
+.bg-\[\#2c2f32\] {
+    background-color: var(--sidebar-icon-bg) !important;
+}
+
+/* Borders */
+.border-\[\#3a3a43\] {
+    border-color: var(--border-color) !important;
+}
+
+/* Input backgrounds */
+input,
+textarea,
+select {
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+/* Apply filter to invert icons in light mode */
+html.light-mode img.filter.invert {
+    filter: invert(1) !important;
+}
+
+/* Make sure buttons maintain readability */
+html.light-mode button.bg-\[\#1dc071\],
+html.light-mode button.bg-\[\#8c6dfd\] {
+    color: white !important;
+}
+
+/* Ensure all containers use theme colors */
+.min-h-screen {
+    background-color: var(--background) !important;
+}
+
+/* Fix for campaign cards in light mode */
+html.light-mode .campaign-card {
+    background-color: var(--card-bg) !important;
+}
+
+/* Fix for any additional containers */
+html.light-mode .container,
+html.light-mode .card,
+html.light-mode .box,
+html.light-mode .panel {
+    background-color: var(--card-bg) !important;
+    color: var(--text-primary) !important;
+}
