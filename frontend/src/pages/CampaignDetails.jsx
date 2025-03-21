@@ -1,54 +1,193 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { ethers } from "ethers";
 
 import { useStateContext } from "../context";
 import { CountBox, CustomButton, Loader } from "../components";
 import { calculateBarPercentage, daysLeft } from "../utils";
 import { thirdweb } from "../assets";
+import MaterialDonationStatusManager from "../components/MaterialDonationStatusManager";
 
 const CampaignDetails = () => {
   const { state } = useLocation();
+  const { id } = useParams(); // Get the campaign ID from URL params
   const navigate = useNavigate();
-  const { donate, getDonations, contract, address } = useStateContext();
+  const {
+    donate,
+    getDonations,
+    contract,
+    address,
+    getCampaignMaterialDonations,
+    getCampaigns,
+  } = useStateContext();
 
   const [isLoading, setIsLoading] = useState(false);
   const [amount, setAmount] = useState("");
   const [donators, setDonators] = useState([]);
+  const [materialDonations, setMaterialDonations] = useState([]);
+  const [campaignData, setCampaignData] = useState(state);
+  const [selectedDonation, setSelectedDonation] = useState(null);
+  const [showStatusManager, setShowStatusManager] = useState(false);
 
-  const remainingDays = daysLeft(state.deadline);
+  // Fetch campaign data if not available in state (e.g., on page refresh)
+  useEffect(() => {
+    const fetchCampaignIfNeeded = async () => {
+      if (!campaignData && contract) {
+        setIsLoading(true);
+        try {
+          const campaigns = await getCampaigns();
+          // Use the ID from URL params to find the campaign
+          const campaign = campaigns.find((c) => c.pId.toString() === id);
+
+          if (campaign) {
+            setCampaignData(campaign);
+          } else {
+            console.error("Campaign not found with ID:", id);
+          }
+        } catch (error) {
+          console.error("Failed to fetch campaign:", error);
+        }
+        setIsLoading(false);
+      }
+    };
+
+    fetchCampaignIfNeeded();
+  }, [contract, id, campaignData, getCampaigns]);
+
+  // Only calculate remaining days if we have campaign data
+  const remainingDays = campaignData ? daysLeft(campaignData.deadline) : 0;
 
   const fetchDonators = async () => {
-    const data = await getDonations(state.pId);
+    if (!campaignData) return;
 
+    const data = await getDonations(campaignData.pId);
     setDonators(data);
   };
 
+  const fetchMaterialDonations = async () => {
+    if (!campaignData || !campaignData.acceptsMaterialDonations) return;
+
+    const data = await getCampaignMaterialDonations(campaignData.pId);
+    setMaterialDonations(data);
+  };
+
   useEffect(() => {
-    if (contract) fetchDonators();
-  }, [contract, address]);
+    if (contract && campaignData) {
+      fetchDonators();
+      fetchMaterialDonations();
+    }
+  }, [contract, address, campaignData]);
 
   const handleDonate = async () => {
+    if (!campaignData) return;
+
     setIsLoading(true);
-
-    await donate(state.pId, amount);
-
+    await donate(campaignData.pId, amount);
     navigate("/");
     setIsLoading(false);
   };
 
   const navigateToMaterialDonation = () => {
-    navigate(`/donate-materials/${state.pId}`);
+    if (!campaignData) return;
+
+    navigate(`/donate-materials/${campaignData.pId}`, {
+      state: {
+        ...campaignData,
+        campaignId: campaignData.pId,
+      },
+    });
   };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "pledged":
+        return "text-yellow-500";
+      case "verified":
+        return "text-blue-500";
+      case "in-transit":
+        return "text-purple-500";
+      case "delivered":
+        return "text-green-500";
+      default:
+        return "text-gray-500";
+    }
+  };
+
+  // Format expiry date from timestamp if available
+  const formatExpiryDate = (timestamp) => {
+    if (!timestamp || timestamp === "0") return "N/A";
+    return new Date(parseInt(timestamp)).toLocaleDateString();
+  };
+
+  // Handle donation status management
+  const handleManageDonation = (donation) => {
+    setSelectedDonation(donation);
+    setShowStatusManager(true);
+  };
+
+  const handleStatusManagerClose = () => {
+    setShowStatusManager(false);
+    setSelectedDonation(null);
+    // Refresh the donations list after status change
+    fetchMaterialDonations();
+  };
+
+  // Check if user is campaign owner
+  const isOwner = address && campaignData && address === campaignData.owner;
+  // Check if user is donor for a specific donation
+  const isDonor = (donation) =>
+    address && donation && address === donation.donor;
+
+  // Show loading state while fetching campaign data
+  if (isLoading) {
+    return <Loader />;
+  }
+
+  // Show error message if campaign data is not available
+  if (!campaignData) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <h2 className="font-epilogue font-bold text-[30px] text-white text-center">
+          Campaign Not Found
+        </h2>
+        <p className="font-epilogue font-normal text-[16px] text-[#808191] mt-[10px] text-center">
+          The campaign you're looking for doesn't exist or has been removed.
+        </p>
+        <CustomButton
+          btnType="button"
+          title="Go Back to Home"
+          styles="mt-[30px] bg-[#8c6dfd]"
+          handleClick={() => navigate("/")}
+        />
+      </div>
+    );
+  }
 
   return (
     <div>
       {isLoading && <Loader />}
 
+      {/* Status Manager Modal */}
+      {showStatusManager && selectedDonation && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1c1c24] p-6 rounded-[20px] max-w-xl w-full">
+            <h3 className="font-epilogue font-bold text-[20px] text-white mb-4">
+              Update Donation Status
+            </h3>
+            <MaterialDonationStatusManager
+              donation={selectedDonation}
+              onClose={handleStatusManagerClose}
+              isOwner={isOwner}
+              isDonor={isDonor(selectedDonation)}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="w-full flex md:flex-row flex-col mt-10 gap-[30px]">
         <div className="flex-1 flex-col">
           <img
-            src={state.image}
+            src={campaignData.image}
             alt="campaign"
             className="w-full h-[410px] object-cover rounded-xl"
           />
@@ -57,8 +196,8 @@ const CampaignDetails = () => {
               className="absolute h-full bg-[#4acd8d]"
               style={{
                 width: `${calculateBarPercentage(
-                  state.target,
-                  state.amountCollected
+                  campaignData.target,
+                  campaignData.amountCollected
                 )}%`,
                 maxWidth: "100%",
               }}
@@ -69,10 +208,16 @@ const CampaignDetails = () => {
         <div className="flex md:w-[150px] w-full flex-wrap justify-between gap-[30px]">
           <CountBox title="Days Left" value={remainingDays} />
           <CountBox
-            title={`Raised of ${state.target}`}
-            value={state.amountCollected}
+            title={`Raised of ${campaignData.target}`}
+            value={campaignData.amountCollected}
           />
           <CountBox title="Total Backers" value={donators.length} />
+          {campaignData.acceptsMaterialDonations && (
+            <CountBox
+              title="Material Donations"
+              value={materialDonations.length}
+            />
+          )}
         </div>
       </div>
 
@@ -93,7 +238,7 @@ const CampaignDetails = () => {
               </div>
               <div>
                 <h4 className="font-epilogue font-semibold text-[14px] text-white break-all">
-                  {state.owner}
+                  {campaignData.owner}
                 </h4>
                 <p className="mt-[4px] font-epilogue font-normal text-[12px] text-[#808191]">
                   10 Campaigns
@@ -109,8 +254,91 @@ const CampaignDetails = () => {
 
             <div className="mt-[20px]">
               <p className="font-epilogue font-normal text-[16px] text-[#808191] leading-[26px] text-justify">
-                {state.description}
+                {campaignData.description}
               </p>
+            </div>
+          </div>
+
+          {/* Display campaign type with more detailed information */}
+          <div>
+            <h4 className="font-epilogue font-semibold text-[18px] text-white uppercase">
+              Campaign Type
+            </h4>
+
+            <div className="mt-[20px]">
+              <p className="font-epilogue font-normal text-[16px] text-[#808191] leading-[26px]">
+                {campaignData.acceptsMaterialDonations
+                  ? "This campaign accepts both monetary and material donations."
+                  : "This campaign accepts only monetary donations."}
+              </p>
+
+              {/* Display additional material campaign details if applicable */}
+              {campaignData.acceptsMaterialDonations && (
+                <div className="mt-4 p-4 bg-[#1c1c24] rounded-[10px]">
+                  <h5 className="font-epilogue font-medium text-[16px] text-white mb-2">
+                    Material Donation Details
+                  </h5>
+
+                  {/* Display item types accepted */}
+                  {campaignData.itemTypes &&
+                    campaignData.itemTypes.length > 0 && (
+                      <div className="mb-2">
+                        <p className="font-epilogue text-[14px] text-[#808191]">
+                          <span className="text-white">
+                            Accepting donations of:{" "}
+                          </span>
+                          {Array.isArray(campaignData.itemTypes)
+                            ? campaignData.itemTypes.join(", ")
+                            : campaignData.itemTypes}
+                        </p>
+                      </div>
+                    )}
+
+                  {/* Display specific item needs if available */}
+                  {campaignData.itemType && campaignData.quantity && (
+                    <div className="mb-2">
+                      <p className="font-epilogue text-[14px] text-[#808191]">
+                        <span className="text-white">Currently needed: </span>
+                        {campaignData.quantity} {campaignData.unit} of{" "}
+                        {campaignData.itemType}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Display locations */}
+                  {campaignData.location && (
+                    <div className="mb-2">
+                      <p className="font-epilogue text-[14px] text-[#808191]">
+                        <span className="text-white">Primary location: </span>
+                        {campaignData.location}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Display additional locations if available */}
+                  {campaignData.acceptedLocations && (
+                    <div className="mb-2">
+                      <p className="font-epilogue text-[14px] text-[#808191]">
+                        <span className="text-white">
+                          Additional locations:{" "}
+                        </span>
+                        {campaignData.acceptedLocations}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Display expiry date if available */}
+                  {campaignData.expiryDate &&
+                    campaignData.expiryDate !== "0" && (
+                      <div className="mb-2">
+                        <p className="font-epilogue text-[14px] text-[#808191]">
+                          <span className="text-white">Expiry date: </span>
+                          {formatExpiryDate(campaignData.expiryDate)}
+                        </p>
+                      </div>
+                    )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -141,6 +369,162 @@ const CampaignDetails = () => {
               )}
             </div>
           </div>
+
+          {/* Enhanced Material Donations Section with Supply Chain details */}
+          {campaignData.acceptsMaterialDonations && (
+            <div>
+              <h4 className="font-epilogue font-semibold text-[18px] text-white uppercase">
+                Material Donations
+              </h4>
+
+              <div className="mt-[20px] flex flex-col gap-4">
+                {materialDonations.length > 0 ? (
+                  materialDonations.map((item, index) => (
+                    <div
+                      key={`${item.donor}-${index}`}
+                      className="p-4 bg-[#1c1c24] rounded-[10px]"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="font-epilogue font-medium text-[16px] text-white leading-[26px]">
+                            {item.itemType} ({item.quantity} {item.unit})
+                          </p>
+                          <p className="font-epilogue text-[14px] text-[#808191]">
+                            {item.description}
+                          </p>
+                        </div>
+                        <div>
+                          <p
+                            className={`font-epilogue font-bold ${getStatusColor(
+                              item.status
+                            )}`}
+                          >
+                            {item.status.toUpperCase()}
+                          </p>
+                          <p className="font-epilogue text-[14px] text-[#808191]">
+                            #{item.trackingCode || "No tracking"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex flex-wrap justify-between">
+                        <p className="font-epilogue text-[14px] text-[#808191]">
+                          Location: {item.location}
+                        </p>
+                        <p className="font-epilogue text-[14px] text-[#808191]">
+                          Value: {item.estimatedValue || "0"} ETH
+                        </p>
+                        {item.expiryDate && item.expiryDate !== "0" && (
+                          <p className="font-epilogue text-[14px] text-[#808191]">
+                            Expires: {formatExpiryDate(item.expiryDate)}
+                          </p>
+                        )}
+                      </div>
+                      <div className="mt-2">
+                        <p className="font-epilogue text-[14px] text-[#808191]">
+                          From: {item.donor.slice(0, 6)}...
+                          {item.donor.slice(-4)}
+                        </p>
+                      </div>
+
+                      {/* Add supply chain tracking information */}
+                      <div className="mt-4 pt-3 border-t border-[#3a3a43]">
+                        <h6 className="font-epilogue font-medium text-[14px] text-white mb-2">
+                          Supply Chain Status
+                        </h6>
+                        <div className="flex flex-wrap gap-2">
+                          <div
+                            className={`px-2 py-1 rounded-lg ${
+                              item.status === "pledged"
+                                ? "bg-yellow-900/30"
+                                : "bg-[#2c2f32]"
+                            }`}
+                          >
+                            <p
+                              className={`text-xs ${
+                                item.status === "pledged"
+                                  ? "text-yellow-500"
+                                  : "text-[#808191]"
+                              }`}
+                            >
+                              Pledged
+                            </p>
+                          </div>
+                          <div
+                            className={`px-2 py-1 rounded-lg ${
+                              item.status === "verified"
+                                ? "bg-blue-900/30"
+                                : "bg-[#2c2f32]"
+                            }`}
+                          >
+                            <p
+                              className={`text-xs ${
+                                item.status === "verified"
+                                  ? "text-blue-500"
+                                  : "text-[#808191]"
+                              }`}
+                            >
+                              Verified
+                            </p>
+                          </div>
+                          <div
+                            className={`px-2 py-1 rounded-lg ${
+                              item.status === "in-transit"
+                                ? "bg-purple-900/30"
+                                : "bg-[#2c2f32]"
+                            }`}
+                          >
+                            <p
+                              className={`text-xs ${
+                                item.status === "in-transit"
+                                  ? "text-purple-500"
+                                  : "text-[#808191]"
+                              }`}
+                            >
+                              In Transit
+                            </p>
+                          </div>
+                          <div
+                            className={`px-2 py-1 rounded-lg ${
+                              item.status === "delivered"
+                                ? "bg-green-900/30"
+                                : "bg-[#2c2f32]"
+                            }`}
+                          >
+                            <p
+                              className={`text-xs ${
+                                item.status === "delivered"
+                                  ? "text-green-500"
+                                  : "text-[#808191]"
+                              }`}
+                            >
+                              Delivered
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Add status management buttons */}
+                      {(isOwner || isDonor(item)) &&
+                        item.status !== "delivered" && (
+                          <div className="mt-4">
+                            <CustomButton
+                              btnType="button"
+                              title="Manage Status"
+                              styles="bg-[#8c6dfd] w-full"
+                              handleClick={() => handleManageDonation(item)}
+                            />
+                          </div>
+                        )}
+                    </div>
+                  ))
+                ) : (
+                  <p className="font-epilogue font-normal text-[16px] text-[#808191] leading-[26px] text-justify">
+                    No material donations yet. Be the first one!
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex-1">
@@ -180,7 +564,7 @@ const CampaignDetails = () => {
               />
 
               {/* Display Material Donation Button if campaign accepts material donations */}
-              {state.acceptsMaterialDonations && (
+              {campaignData.acceptsMaterialDonations && (
                 <div className="mt-[20px]">
                   <CustomButton
                     btnType="button"
@@ -189,8 +573,12 @@ const CampaignDetails = () => {
                     handleClick={navigateToMaterialDonation}
                   />
                   <p className="mt-[10px] font-epilogue font-normal text-[12px] text-center text-[#808191]">
-                    This campaign accepts food, medicine, clothing and other
-                    physical donations.
+                    {campaignData.itemTypes &&
+                    Array.isArray(campaignData.itemTypes)
+                      ? `This campaign accepts ${campaignData.itemTypes.join(
+                          ", "
+                        )} and other physical donations.`
+                      : "This campaign accepts material donations."}
                   </p>
                 </div>
               )}

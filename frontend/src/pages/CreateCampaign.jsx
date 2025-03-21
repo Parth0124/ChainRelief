@@ -30,6 +30,13 @@ const CreateCampaign = () => {
     acceptsMaterialDonations: true,
     itemTypes: ["Food", "Medicine", "Clothing", "Education", "Shelter"],
     acceptedLocations: "",
+    // Added from MaterialDonationForm
+    itemType: "Food",
+    quantity: "",
+    unit: "items",
+    estimatedValue: "0",
+    location: "",
+    expiryDate: "",
   });
 
   // Add custom styles for the date input - green calendar icon, but normal placeholder text
@@ -104,10 +111,19 @@ const CreateCampaign = () => {
           });
         } else {
           // For material campaigns, we use the material form
+          // Convert expiry date from string to timestamp if provided
+          const expiryTimestamp = materialForm.expiryDate
+            ? new Date(materialForm.expiryDate).getTime()
+            : 0;
+
           await createCampaign({
             ...materialForm,
+            expiryDate: expiryTimestamp,
             // No target amount needed for material-only campaigns, but contract expects it
-            target: ethers.utils.parseUnits("0", 18),
+            target: ethers.utils.parseUnits(
+              materialForm.estimatedValue || "0",
+              18
+            ),
           });
         }
 
@@ -176,23 +192,6 @@ const CreateCampaign = () => {
         value={form.image}
         handleChange={(e) => handleFormFieldChange("image", e)}
       />
-
-      {/* Material donations checkbox */}
-      <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          id="acceptsMaterialDonations"
-          className="w-4 h-4 bg-transparent border-[1px] border-[#3a3a43]"
-          checked={form.acceptsMaterialDonations}
-          onChange={(e) => handleFormFieldChange("acceptsMaterialDonations", e)}
-        />
-        <label
-          htmlFor="acceptsMaterialDonations"
-          className="font-epilogue font-medium text-[14px] leading-[22px] text-white"
-        >
-          Accept Material Donations (food, medicine, clothing, etc.)
-        </label>
-      </div>
     </>
   );
 
@@ -221,10 +220,91 @@ const CreateCampaign = () => {
         value={materialForm.description}
         handleChange={(e) => handleMaterialFormFieldChange("description", e)}
       />
+
+      {/* Item Type Selection */}
+      <div className="w-full">
+        <label className="font-epilogue font-medium text-[14px] leading-[22px] text-white mb-[10px] block">
+          Item Type *
+        </label>
+        <select
+          value={materialForm.itemType}
+          onChange={(e) => handleMaterialFormFieldChange("itemType", e)}
+          className="py-[15px] sm:px-[25px] px-[15px] outline-none border-[1px] border-[#3a3a43] bg-transparent font-epilogue text-white text-[14px] placeholder:text-[#4b5264] rounded-[10px] w-full"
+        >
+          <option value="Food" className="bg-[#1c1c24]">
+            Food
+          </option>
+          <option value="Medicine" className="bg-[#1c1c24]">
+            Medicine
+          </option>
+          <option value="Clothing" className="bg-[#1c1c24]">
+            Clothing
+          </option>
+          <option value="Education" className="bg-[#1c1c24]">
+            Education
+          </option>
+          <option value="Shelter" className="bg-[#1c1c24]">
+            Shelter
+          </option>
+          <option value="Other" className="bg-[#1c1c24]">
+            Other
+          </option>
+        </select>
+      </div>
+
+      <div className="flex flex-wrap gap-[40px]">
+        <FormField
+          labelName="Quantity *"
+          placeholder="10"
+          inputType="number"
+          value={materialForm.quantity}
+          handleChange={(e) => handleMaterialFormFieldChange("quantity", e)}
+        />
+        <FormField
+          labelName="Unit *"
+          placeholder="items, kg, boxes, etc."
+          inputType="text"
+          value={materialForm.unit}
+          handleChange={(e) => handleMaterialFormFieldChange("unit", e)}
+        />
+      </div>
+
+      <div className="flex flex-wrap gap-[40px]">
+        <FormField
+          labelName="Estimated Value (ETH)"
+          placeholder="0.01"
+          inputType="number"
+          step="0.001"
+          value={materialForm.estimatedValue}
+          handleChange={(e) =>
+            handleMaterialFormFieldChange("estimatedValue", e)
+          }
+        />
+        <div className="date-input-container">
+          <style>{dateInputStyles}</style>
+          <FormField
+            labelName="Expiry Date (if applicable)"
+            placeholder="Expiry Date"
+            inputType="date"
+            value={materialForm.expiryDate}
+            handleChange={(e) => handleMaterialFormFieldChange("expiryDate", e)}
+            additionalClass="date-input"
+          />
+        </div>
+      </div>
+
+      <FormField
+        labelName="Pickup/Delivery Location *"
+        placeholder="Where can the donation be collected or delivered?"
+        inputType="text"
+        value={materialForm.location}
+        handleChange={(e) => handleMaterialFormFieldChange("location", e)}
+      />
+
       <div className="date-input-container">
         <style>{dateInputStyles}</style>
         <FormField
-          labelName="End Date *"
+          labelName="Campaign End Date *"
           placeholder="End Date"
           inputType="date"
           value={materialForm.deadline}
@@ -232,6 +312,7 @@ const CreateCampaign = () => {
           additionalClass="date-input"
         />
       </div>
+
       <FormField
         labelName="Campaign image *"
         placeholder="Place image URL of your campaign"
@@ -240,10 +321,10 @@ const CreateCampaign = () => {
         handleChange={(e) => handleMaterialFormFieldChange("image", e)}
       />
 
-      {/* Accepted item types */}
+      {/* Accepted item types section - kept from original MaterialForm */}
       <div className="flex flex-col gap-[15px]">
         <label className="font-epilogue font-medium text-[14px] leading-[22px] text-white">
-          What types of donations are you accepting? *
+          What other types of donations are you accepting? *
         </label>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {[
@@ -276,7 +357,7 @@ const CreateCampaign = () => {
 
       {/* Accepted locations */}
       <FormField
-        labelName="Accepted Pickup/Delivery Locations *"
+        labelName="Additional Accepted Pickup/Delivery Locations"
         placeholder="e.g., New York City, Boston, Remote"
         inputType="text"
         value={materialForm.acceptedLocations}
@@ -307,10 +388,10 @@ const CreateCampaign = () => {
           className="py-[15px] sm:px-[25px] px-[15px] outline-none border-[1px] border-[#3a3a43] bg-transparent font-epilogue text-white text-[14px] placeholder:text-[#4b5264] rounded-[10px] w-full"
         >
           <option value="monetary" className="bg-[#1c1c24]">
-            Monetary Campaign
+            Monetary
           </option>
           <option value="material" className="bg-[#1c1c24]">
-            Material Donations Campaign
+            Material
           </option>
         </select>
       </div>
