@@ -21,7 +21,7 @@ const Icon = ({
       isActive === name &&
       (darkMode ? "bg-[#2c2f32]" : "bg-gray-200")
     } flex justify-center items-center ${
-      !disabled && "cursor-pointer"
+      (!disabled || name === "logout") && "cursor-pointer"
     } ${styles}`}
     onClick={handleClick}
   >
@@ -142,7 +142,15 @@ const Sidebar = () => {
 
   return (
     <div className="flex justify-between items-center flex-col sticky top-5 h-[93vh]">
-      <Link to="/">
+      <Link
+        to="/"
+        onClick={(e) => {
+          /* Optional logging */
+        }}
+        onTouchEnd={(e) => {
+          /* Optional logging */
+        }}
+      >
         <Icon
           styles={`w-[52px] h-[52px] ${
             darkMode ? "bg-[#2c2f32]" : "bg-gray-200"

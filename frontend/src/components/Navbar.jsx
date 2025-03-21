@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { useStateContext } from "../context";
 import { CustomButton } from "./";
-import { logo, menu, search, thirdweb } from "../assets";
+import { logo, menu, search, user } from "../assets";
 import { navlinks } from "../constants";
 
 const Navbar = () => {
@@ -13,6 +13,7 @@ const Navbar = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
+  const [showWalletPopup, setShowWalletPopup] = useState(false);
 
   // Use optional chaining to safely access context values
   const context = useStateContext();
@@ -81,6 +82,27 @@ const Navbar = () => {
   const handleResultClick = (id) => {
     setShowResults(false);
     navigate(`/campaign-details/${id}`);
+  };
+
+  // Handle profile click - check wallet connection
+  const handleProfileClick = () => {
+    if (address) {
+      navigate("/profile");
+    } else {
+      setShowWalletPopup(true);
+    }
+  };
+
+  // Handle wallet connection
+  const handleConnect = async () => {
+    if (connect) {
+      try {
+        await connect();
+        setShowWalletPopup(false);
+      } catch (error) {
+        console.error("Failed to connect wallet:", error);
+      }
+    }
   };
 
   return (
@@ -165,15 +187,16 @@ const Navbar = () => {
           }}
         />
 
-        <Link to="/profile">
-          <div className="w-[52px] h-[52px] rounded-full bg-[#2c2f32] flex justify-center items-center cursor-pointer">
-            <img
-              src={thirdweb}
-              alt="user"
-              className="w-[60%] h-[60%] object-contain"
-            />
-          </div>
-        </Link>
+        <div
+          className="w-[52px] h-[52px] rounded-full bg-[#2c2f32] flex justify-center items-center cursor-pointer"
+          onClick={handleProfileClick}
+        >
+          <img
+            src={user}
+            alt="user"
+            className="w-[60%] h-[60%] object-contain"
+          />
+        </div>
       </div>
 
       {/* Small screen navigation */}
@@ -242,6 +265,38 @@ const Navbar = () => {
           </div>
         </div>
       </div>
+
+      {/* Wallet Connection Popup */}
+      {showWalletPopup && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-[#1c1c24] rounded-[20px] p-6 w-[90%] max-w-[400px] shadow-xl">
+            <h3 className="font-epilogue font-bold text-[20px] text-white text-center mb-4">
+              Connect Wallet
+            </h3>
+            <p className="font-epilogue font-normal text-[16px] text-[#808191] text-center mb-6">
+              Please connect your wallet to access your profile
+            </p>
+
+            <div className="flex flex-row gap-4">
+              <button
+                onClick={() => setShowWalletPopup(false)}
+                className="flex-1 px-4 py-2 rounded-[10px] bg-gray-600 text-white hover:bg-gray-700 transition font-epilogue"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (connect) connect();
+                  setShowWalletPopup(false);
+                }}
+                className="flex-1 px-4 py-2 rounded-[10px] bg-[#8c6dfd] text-white hover:bg-[#7c5ffd] transition font-epilogue"
+              >
+                Connect
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
