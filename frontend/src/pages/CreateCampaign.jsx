@@ -280,22 +280,11 @@ const CreateCampaign = () => {
             handleMaterialFormFieldChange("estimatedValue", e)
           }
         />
-        <div className="date-input-container">
-          <style>{dateInputStyles}</style>
-          <FormField
-            labelName="Expiry Date (if applicable)"
-            placeholder="Expiry Date"
-            inputType="date"
-            value={materialForm.expiryDate}
-            handleChange={(e) => handleMaterialFormFieldChange("expiryDate", e)}
-            additionalClass="date-input"
-          />
-        </div>
       </div>
 
       <FormField
-        labelName="Pickup/Delivery Location *"
-        placeholder="Where can the donation be collected or delivered?"
+        labelName="Pickup Location *"
+        placeholder="Where can the donation be collected?"
         inputType="text"
         value={materialForm.location}
         handleChange={(e) => handleMaterialFormFieldChange("location", e)}
@@ -357,7 +346,7 @@ const CreateCampaign = () => {
 
       {/* Accepted locations */}
       <FormField
-        labelName="Additional Accepted Pickup/Delivery Locations"
+        labelName="Accepted Delivery Locations (incase anyone wants to deliver donations through post,amazon,etc)"
         placeholder="e.g., New York City, Boston, Remote"
         inputType="text"
         value={materialForm.acceptedLocations}

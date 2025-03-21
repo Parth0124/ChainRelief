@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { useStateContext } from "../context";
@@ -10,28 +10,148 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [isActive, setIsActive] = useState("dashboard");
   const [toggleDrawer, setToggleDrawer] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [showResults, setShowResults] = useState(false);
 
   // Use optional chaining to safely access context values
   const context = useStateContext();
   const address = context?.address;
   const connect = context?.connect;
+  const getCampaigns = context?.getCampaigns;
+
+  // Fetch campaigns when component mounts
+  useEffect(() => {
+    const fetchCampaigns = async () => {
+      if (getCampaigns) {
+        try {
+          const allCampaigns = await getCampaigns();
+          // Initialize with empty results
+          setSearchResults([]);
+        } catch (error) {
+          console.error("Failed to fetch campaigns:", error);
+        }
+      }
+    };
+
+    fetchCampaigns();
+  }, [getCampaigns]);
+
+  // Search functionality
+  const handleSearch = async () => {
+    if (!searchTerm.trim()) {
+      setSearchResults([]);
+      setShowResults(false);
+      return;
+    }
+
+    try {
+      const allCampaigns = await getCampaigns();
+      const filteredCampaigns = allCampaigns.filter((campaign) => {
+        const titleMatch = campaign.title
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
+        const descriptionMatch = campaign.description
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
+        return titleMatch || descriptionMatch;
+      });
+
+      setSearchResults(filteredCampaigns);
+      setShowResults(true);
+    } catch (error) {
+      console.error("Search failed:", error);
+    }
+  };
+
+  // Debounce search to avoid excessive API calls
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchTerm) {
+        handleSearch();
+      } else {
+        setShowResults(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
+
+  // Handle clicking on a search result
+  const handleResultClick = (id) => {
+    setShowResults(false);
+    navigate(`/campaign-details/${id}`);
+  };
 
   return (
     <div className="flex md:flex-row flex-col-reverse justify-between mb-[35px] gap-6">
-      <div className="lg:flex-1 flex flex-row max-w-full py-2 pl-4 pr-2 h-[52px] bg-[#1c1c24] rounded-[100px]">
-        <input
-          type="text"
-          placeholder="Search for campaigns"
-          className="flex w-full font-epilogue font-normal text-[14px] placeholder:text-[#4b5264] text-white bg-transparent outline-none"
-        />
-
-        <div className="w-[72px] h-full rounded-[20px] bg-[#4acd8d] flex justify-center items-center cursor-pointer">
-          <img
-            src={search}
-            alt="search"
-            className="w-[15px] h-[15px] object-contain"
+      <div className="lg:flex-1 flex flex-col relative">
+        <div className="flex flex-row max-w-full py-2 pl-4 pr-2 h-[52px] bg-[#1c1c24] rounded-[100px]">
+          <input
+            type="text"
+            placeholder="Search for campaigns"
+            className="flex w-full font-epilogue font-normal text-[14px] placeholder:text-[#4b5264] text-white bg-transparent outline-none"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
           />
+
+          <div
+            className="w-[72px] h-full rounded-[20px] bg-[#4acd8d] flex justify-center items-center cursor-pointer"
+            onClick={handleSearch}
+          >
+            <img
+              src={search}
+              alt="search"
+              className="w-[15px] h-[15px] object-contain"
+            />
+          </div>
         </div>
+
+        {/* Search Results Dropdown */}
+        {showResults && searchResults.length > 0 && (
+          <div className="absolute top-[60px] left-0 right-0 max-h-[300px] overflow-y-auto bg-[#1c1c24] z-20 rounded-[20px] shadow-lg">
+            {searchResults.map((campaign) => (
+              <div
+                key={campaign.pId}
+                className="p-4 border-b border-[#3a3a43] hover:bg-[#3a3a43] cursor-pointer transition-all"
+                onClick={() => handleResultClick(campaign.pId)}
+              >
+                <div className="flex items-center gap-3">
+                  <img
+                    src={campaign.image}
+                    alt={campaign.title}
+                    className="w-[40px] h-[40px] rounded-full object-cover"
+                  />
+                  <div>
+                    <h4 className="font-epilogue font-semibold text-[14px] text-white">
+                      {campaign.title}
+                    </h4>
+                    <p className="font-epilogue font-normal text-[12px] text-[#808191] truncate">
+                      {campaign.description.length > 60
+                        ? campaign.description.substring(0, 60) + "..."
+                        : campaign.description}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <p className="font-epilogue font-normal text-[12px] text-[#808191]">
+                    Target: {campaign.target} ETH
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* No Results Message */}
+        {showResults && searchResults.length === 0 && searchTerm && (
+          <div className="absolute top-[60px] left-0 right-0 bg-[#1c1c24] z-20 rounded-[20px] shadow-lg p-4">
+            <p className="font-epilogue font-normal text-[14px] text-center text-[#808191]">
+              No campaigns found matching "{searchTerm}"
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="sm:flex hidden flex-row justify-end gap-4">
