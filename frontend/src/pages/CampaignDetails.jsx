@@ -37,6 +37,10 @@ const CampaignDetails = () => {
     setIsLoading(false);
   };
 
+  const navigateToMaterialDonation = () => {
+    navigate(`/donate-materials/${state.pId}`);
+  };
+
   return (
     <div>
       {isLoading && <Loader />}
@@ -174,6 +178,22 @@ const CampaignDetails = () => {
                 styles="w-full bg-[#8c6dfd]"
                 handleClick={handleDonate}
               />
+
+              {/* Display Material Donation Button if campaign accepts material donations */}
+              {state.acceptsMaterialDonations && (
+                <div className="mt-[20px]">
+                  <CustomButton
+                    btnType="button"
+                    title="Donate Materials"
+                    styles="w-full bg-[#1dc071]"
+                    handleClick={navigateToMaterialDonation}
+                  />
+                  <p className="mt-[10px] font-epilogue font-normal text-[12px] text-center text-[#808191]">
+                    This campaign accepts food, medicine, clothing and other
+                    physical donations.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
