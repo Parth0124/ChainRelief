@@ -17,7 +17,6 @@ const MaterialDonationStatusManager = ({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // Function to update donation status
   const handleUpdateStatus = async (newStatus) => {
     setIsLoading(true);
     setError("");
@@ -26,7 +25,7 @@ const MaterialDonationStatusManager = ({
     try {
       await updateDonationStatus(donation.id, newStatus);
       setSuccess(`Donation status updated to ${newStatus.toUpperCase()}`);
-      setTimeout(() => onClose(), 2000); // Close after 2 seconds
+      setTimeout(() => onClose(), 2000);
     } catch (error) {
       console.error("Failed to update donation status:", error);
       setError("Failed to update status. Please try again.");
@@ -35,7 +34,6 @@ const MaterialDonationStatusManager = ({
     }
   };
 
-  // Function to verify a donation
   const handleVerifyDonation = async () => {
     if (!verificationNotes.trim()) {
       setError("Please provide verification notes");
@@ -49,7 +47,7 @@ const MaterialDonationStatusManager = ({
     try {
       await verifyDonation(donation.id, verificationNotes);
       setSuccess("Donation verified successfully");
-      setTimeout(() => onClose(), 2000); // Close after 2 seconds
+      setTimeout(() => onClose(), 2000);
     } catch (error) {
       console.error("Failed to verify donation:", error);
       setError("Failed to verify donation. Please try again.");
@@ -58,7 +56,6 @@ const MaterialDonationStatusManager = ({
     }
   };
 
-  // Function to mark a donation as delivered
   const handleMarkDelivered = async () => {
     setIsLoading(true);
     setError("");
@@ -67,7 +64,7 @@ const MaterialDonationStatusManager = ({
     try {
       await markDonationDelivered(donation.id);
       setSuccess("Donation marked as delivered");
-      setTimeout(() => onClose(), 2000); // Close after 2 seconds
+      setTimeout(() => onClose(), 2000);
     } catch (error) {
       console.error("Failed to mark donation as delivered:", error);
       setError("Failed to mark as delivered. Please try again.");
@@ -76,7 +73,6 @@ const MaterialDonationStatusManager = ({
     }
   };
 
-  // Function to update tracking code
   const handleUpdateTrackingCode = async () => {
     if (!trackingCode.trim()) {
       setError("Please provide a tracking code");
@@ -88,11 +84,9 @@ const MaterialDonationStatusManager = ({
     setSuccess("");
 
     try {
-      // You'll need to implement this function in your context
-      // This is just a placeholder, assuming you'll add this function
       await updateDonationStatus(donation.id, "in-transit", trackingCode);
       setSuccess("Tracking code updated and status changed to IN-TRANSIT");
-      setTimeout(() => onClose(), 2000); // Close after 2 seconds
+      setTimeout(() => onClose(), 2000);
     } catch (error) {
       console.error("Failed to update tracking code:", error);
       setError("Failed to update tracking code. Please try again.");
@@ -101,7 +95,6 @@ const MaterialDonationStatusManager = ({
     }
   };
 
-  // Render different options based on current status and user role
   const renderStatusOptions = () => {
     switch (donation.status) {
       case "pledged":
@@ -265,7 +258,6 @@ const MaterialDonationStatusManager = ({
 
   return (
     <div className="flex flex-col">
-      {/* Donation Info */}
       <div className="bg-[#13131a] p-4 rounded-[10px] mb-4">
         <h4 className="font-epilogue font-semibold text-[16px] text-white mb-2">
           Donation Information
@@ -311,8 +303,6 @@ const MaterialDonationStatusManager = ({
           )}
         </div>
       </div>
-
-      {/* Error and Success Messages */}
       {error && (
         <div className="bg-red-900/30 p-3 rounded-[10px] mb-4">
           <p className="font-epilogue text-[14px] text-red-500">{error}</p>
@@ -324,11 +314,7 @@ const MaterialDonationStatusManager = ({
           <p className="font-epilogue text-[14px] text-green-500">{success}</p>
         </div>
       )}
-
-      {/* Status-specific Options */}
       {renderStatusOptions()}
-
-      {/* Close Button (if not shown in the status options) */}
       {donation.status !== "delivered" && donation.status !== "cancelled" && (
         <CustomButton
           btnType="button"

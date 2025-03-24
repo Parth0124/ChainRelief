@@ -21,7 +21,6 @@ export const StateContextProvider = ({ children }) => {
     "createCampaign"
   );
 
-  // Add new contract write functions for material donations
   const { mutateAsync: pledgeMaterialDonation } = useContractWrite(
     contract,
     "pledgeMaterialDonation"
@@ -50,13 +49,13 @@ export const StateContextProvider = ({ children }) => {
     try {
       const data = await createCampaign({
         args: [
-          address, // owner
-          form.title, // title
-          form.description, // description
+          address,
+          form.title, 
+          form.description,
           form.target,
-          new Date(form.deadline).getTime(), // deadline,
+          new Date(form.deadline).getTime(),
           form.image,
-          form.acceptsMaterialDonations || false, // Add the acceptsMaterialDonations flag
+          form.acceptsMaterialDonations || false,
         ],
       });
 
@@ -120,9 +119,6 @@ export const StateContextProvider = ({ children }) => {
 
     return parsedDonations;
   };
-
-  // New functions for material donations
-
   const createMaterialDonation = async (campaignId, donationData) => {
     try {
       const data = await pledgeMaterialDonation({
@@ -269,7 +265,6 @@ export const StateContextProvider = ({ children }) => {
         getUserCampaigns,
         donate,
         getDonations,
-        // New material donation functions
         createMaterialDonation,
         updateDonationStatus,
         verifyDonation,

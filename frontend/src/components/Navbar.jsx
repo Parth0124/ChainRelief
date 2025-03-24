@@ -15,19 +15,16 @@ const Navbar = () => {
   const [showResults, setShowResults] = useState(false);
   const [showWalletPopup, setShowWalletPopup] = useState(false);
 
-  // Use optional chaining to safely access context values
   const context = useStateContext();
   const address = context?.address;
   const connect = context?.connect;
   const getCampaigns = context?.getCampaigns;
 
-  // Fetch campaigns when component mounts
   useEffect(() => {
     const fetchCampaigns = async () => {
       if (getCampaigns) {
         try {
           const allCampaigns = await getCampaigns();
-          // Initialize with empty results
           setSearchResults([]);
         } catch (error) {
           console.error("Failed to fetch campaigns:", error);
@@ -38,7 +35,6 @@ const Navbar = () => {
     fetchCampaigns();
   }, [getCampaigns]);
 
-  // Search functionality
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
       setSearchResults([]);
@@ -65,7 +61,6 @@ const Navbar = () => {
     }
   };
 
-  // Debounce search to avoid excessive API calls
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       if (searchTerm) {
@@ -78,13 +73,11 @@ const Navbar = () => {
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm]);
 
-  // Handle clicking on a search result
   const handleResultClick = (id) => {
     setShowResults(false);
     navigate(`/campaign-details/${id}`);
   };
 
-  // Handle profile click - check wallet connection
   const handleProfileClick = () => {
     if (address) {
       navigate("/profile");
@@ -93,7 +86,6 @@ const Navbar = () => {
     }
   };
 
-  // Handle wallet connection
   const handleConnect = async () => {
     if (connect) {
       try {
@@ -130,7 +122,6 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Search Results Dropdown */}
         {showResults && searchResults.length > 0 && (
           <div className="absolute top-[60px] left-0 right-0 max-h-[300px] overflow-y-auto bg-[#1c1c24] z-20 rounded-[20px] shadow-lg">
             {searchResults.map((campaign) => (
@@ -166,7 +157,6 @@ const Navbar = () => {
           </div>
         )}
 
-        {/* No Results Message */}
         {showResults && searchResults.length === 0 && searchTerm && (
           <div className="absolute top-[60px] left-0 right-0 bg-[#1c1c24] z-20 rounded-[20px] shadow-lg p-4">
             <p className="font-epilogue font-normal text-[14px] text-center text-[#808191]">
@@ -199,7 +189,6 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Small screen navigation */}
       <div className="sm:hidden flex justify-between items-center relative">
         <div className="w-[40px] h-[40px] rounded-[10px] bg-[#2c2f32] flex justify-center items-center cursor-pointer">
           <img
@@ -266,7 +255,6 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Wallet Connection Popup */}
       {showWalletPopup && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-[#1c1c24] rounded-[20px] p-6 w-[90%] max-w-[400px] shadow-xl">

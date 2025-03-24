@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Main background and text colors with transition */
 :root {
     --background: #13131a;
     --foreground: #ffffff;
@@ -14,13 +13,10 @@
     --border-color: #3a3a43;
     --text-primary: #ffffff;
     --text-secondary: #808191;
-
-    /* Add transition properties to root element */
     --transition-speed: 0.4s;
     --transition-timing: ease;
 }
 
-/* Light theme variables */
 html.light-mode {
     --background: #f8f8f8;
     --foreground: #1c1c24;
@@ -34,7 +30,6 @@ html.light-mode {
     --text-secondary: #4b5264;
 }
 
-/* Apply variables to elements with transitions */
 body {
     background-color: var(--background);
     color: var(--foreground);
@@ -42,19 +37,16 @@ body {
         color var(--transition-speed) var(--transition-timing);
 }
 
-/* Main app background - add transition */
 .bg-\[\#13131a\] {
     background-color: var(--background) !important;
     transition: background-color var(--transition-speed) var(--transition-timing);
 }
 
-/* Card backgrounds - add transition */
 .bg-\[\#1c1c24\] {
     background-color: var(--card-bg) !important;
     transition: background-color var(--transition-speed) var(--transition-timing);
 }
 
-/* Text colors - add transition */
 .text-white {
     color: var(--text-primary) !important;
     transition: color var(--transition-speed) var(--transition-timing);
@@ -65,19 +57,16 @@ body {
     transition: color var(--transition-speed) var(--transition-timing);
 }
 
-/* Sidebar icon backgrounds - add transition */
 .bg-\[\#2c2f32\] {
     background-color: var(--sidebar-icon-bg) !important;
     transition: background-color var(--transition-speed) var(--transition-timing);
 }
 
-/* Borders - add transition */
 .border-\[\#3a3a43\] {
     border-color: var(--border-color) !important;
     transition: border-color var(--transition-speed) var(--transition-timing);
 }
 
-/* Input backgrounds - add transition */
 input,
 textarea,
 select {
@@ -89,7 +78,6 @@ select {
         border-color var(--transition-speed) var(--transition-timing);
 }
 
-/* Apply filter to invert icons in light mode with transition */
 img.filter.invert {
     transition: filter var(--transition-speed) var(--transition-timing);
 }
@@ -98,19 +86,16 @@ html.light-mode img.filter.invert {
     filter: invert(1) !important;
 }
 
-/* Make sure buttons maintain readability */
 html.light-mode button.bg-\[\#1dc071\],
 html.light-mode button.bg-\[\#8c6dfd\] {
     color: white !important;
 }
 
-/* Ensure all containers use theme colors with transition */
 .min-h-screen {
     background-color: var(--background) !important;
     transition: background-color var(--transition-speed) var(--transition-timing);
 }
 
-/* Fix for campaign cards in light mode with transition */
 .campaign-card {
     transition: background-color var(--transition-speed) var(--transition-timing),
         color var(--transition-speed) var(--transition-timing);
@@ -120,7 +105,6 @@ html.light-mode .campaign-card {
     background-color: var(--card-bg) !important;
 }
 
-/* Fix for any additional containers with transition */
 .container,
 .card,
 .box,

@@ -3,8 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { logo } from "../assets";
 import { navlinks } from "../constants";
 import { useStateContext } from "../context";
-import { FiSun, FiMoon } from "react-icons/fi"; // Import sun and moon icons
-import { ThemeContext } from "../context/ThemeProvider"; // Import your ThemeContext
+import { FiSun, FiMoon } from "react-icons/fi";
+import { ThemeContext } from "../context/ThemeProvider";
 
 const Icon = ({
   styles,
@@ -43,7 +43,6 @@ const Icon = ({
   </div>
 );
 
-// Confirmation Dialog Component
 const ConfirmationDialog = ({
   isOpen,
   onClose,
@@ -116,15 +115,12 @@ const Sidebar = () => {
   const [isActive, setIsActive] = useState("dashboard");
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
-  // Use the ThemeContext instead of local state
   const { darkMode, toggleTheme } = useContext(ThemeContext);
 
-  // Get the context values
   const context = useStateContext();
   const address = context?.address;
   const disconnect = context?.disconnect;
 
-  // Check if wallet is connected based on address existence
   const isWalletConnected = !!address;
 
   const handleLogoutClick = () => {
@@ -145,10 +141,8 @@ const Sidebar = () => {
       <Link
         to="/"
         onClick={(e) => {
-          /* Optional logging */
         }}
         onTouchEnd={(e) => {
-          /* Optional logging */
         }}
       >
         <Icon
@@ -184,7 +178,6 @@ const Sidebar = () => {
           ))}
         </div>
 
-        {/* Theme toggle button */}
         <div
           className={`w-[48px] h-[48px] rounded-[10px] ${
             darkMode ? "bg-[#2c2f32]" : "bg-gray-200"
@@ -199,7 +192,6 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* Confirmation Dialog */}
       <ConfirmationDialog
         isOpen={isLogoutDialogOpen}
         onClose={() => setIsLogoutDialogOpen(false)}

@@ -10,7 +10,7 @@ import MaterialDonationStatusManager from "../components/MaterialDonationStatusM
 
 const CampaignDetails = () => {
   const { state } = useLocation();
-  const { id } = useParams(); // Get the campaign ID from URL params
+  const { id } = useParams();
   const navigate = useNavigate();
   const {
     donate,
@@ -29,14 +29,12 @@ const CampaignDetails = () => {
   const [selectedDonation, setSelectedDonation] = useState(null);
   const [showStatusManager, setShowStatusManager] = useState(false);
 
-  // Fetch campaign data if not available in state (e.g., on page refresh)
   useEffect(() => {
     const fetchCampaignIfNeeded = async () => {
       if (!campaignData && contract) {
         setIsLoading(true);
         try {
           const campaigns = await getCampaigns();
-          // Use the ID from URL params to find the campaign
           const campaign = campaigns.find((c) => c.pId.toString() === id);
 
           if (campaign) {
@@ -54,7 +52,6 @@ const CampaignDetails = () => {
     fetchCampaignIfNeeded();
   }, [contract, id, campaignData, getCampaigns]);
 
-  // Only calculate remaining days if we have campaign data
   const remainingDays = campaignData ? daysLeft(campaignData.deadline) : 0;
 
   const fetchDonators = async () => {
@@ -113,13 +110,11 @@ const CampaignDetails = () => {
     }
   };
 
-  // Format expiry date from timestamp if available
   const formatExpiryDate = (timestamp) => {
     if (!timestamp || timestamp === "0") return "N/A";
     return new Date(parseInt(timestamp)).toLocaleDateString();
   };
 
-  // Handle donation status management
   const handleManageDonation = (donation) => {
     setSelectedDonation(donation);
     setShowStatusManager(true);
@@ -128,22 +123,17 @@ const CampaignDetails = () => {
   const handleStatusManagerClose = () => {
     setShowStatusManager(false);
     setSelectedDonation(null);
-    // Refresh the donations list after status change
     fetchMaterialDonations();
   };
 
-  // Check if user is campaign owner
   const isOwner = address && campaignData && address === campaignData.owner;
-  // Check if user is donor for a specific donation
   const isDonor = (donation) =>
     address && donation && address === donation.donor;
 
-  // Show loading state while fetching campaign data
   if (isLoading) {
     return <Loader />;
   }
 
-  // Show error message if campaign data is not available
   if (!campaignData) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
@@ -167,7 +157,6 @@ const CampaignDetails = () => {
     <div>
       {isLoading && <Loader />}
 
-      {/* Status Manager Modal */}
       {showStatusManager && selectedDonation && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
           <div className="bg-[#1c1c24] p-6 rounded-[20px] max-w-xl w-full">
@@ -258,8 +247,6 @@ const CampaignDetails = () => {
               </p>
             </div>
           </div>
-
-          {/* Display campaign type with more detailed information */}
           <div>
             <h4 className="font-epilogue font-semibold text-[18px] text-white uppercase">
               Campaign Type
@@ -271,15 +258,11 @@ const CampaignDetails = () => {
                   ? "This campaign accepts both monetary and material donations."
                   : "This campaign accepts only monetary donations."}
               </p>
-
-              {/* Display additional material campaign details if applicable */}
               {campaignData.acceptsMaterialDonations && (
                 <div className="mt-4 p-4 bg-[#1c1c24] rounded-[10px]">
                   <h5 className="font-epilogue font-medium text-[16px] text-white mb-2">
                     Material Donation Details
                   </h5>
-
-                  {/* Display item types accepted */}
                   {campaignData.itemTypes &&
                     campaignData.itemTypes.length > 0 && (
                       <div className="mb-2">
@@ -293,8 +276,6 @@ const CampaignDetails = () => {
                         </p>
                       </div>
                     )}
-
-                  {/* Display specific item needs if available */}
                   {campaignData.itemType && campaignData.quantity && (
                     <div className="mb-2">
                       <p className="font-epilogue text-[14px] text-[#808191]">
@@ -304,8 +285,6 @@ const CampaignDetails = () => {
                       </p>
                     </div>
                   )}
-
-                  {/* Display locations */}
                   {campaignData.location && (
                     <div className="mb-2">
                       <p className="font-epilogue text-[14px] text-[#808191]">
@@ -314,8 +293,6 @@ const CampaignDetails = () => {
                       </p>
                     </div>
                   )}
-
-                  {/* Display additional locations if available */}
                   {campaignData.acceptedLocations && (
                     <div className="mb-2">
                       <p className="font-epilogue text-[14px] text-[#808191]">
@@ -326,8 +303,6 @@ const CampaignDetails = () => {
                       </p>
                     </div>
                   )}
-
-                  {/* Display expiry date if available */}
                   {campaignData.expiryDate &&
                     campaignData.expiryDate !== "0" && (
                       <div className="mb-2">
@@ -369,8 +344,6 @@ const CampaignDetails = () => {
               )}
             </div>
           </div>
-
-          {/* Enhanced Material Donations Section with Supply Chain details */}
           {campaignData.acceptsMaterialDonations && (
             <div>
               <h4 className="font-epilogue font-semibold text-[18px] text-white uppercase">
@@ -425,8 +398,6 @@ const CampaignDetails = () => {
                           {item.donor.slice(-4)}
                         </p>
                       </div>
-
-                      {/* Add supply chain tracking information */}
                       <div className="mt-4 pt-3 border-t border-[#3a3a43]">
                         <h6 className="font-epilogue font-medium text-[14px] text-white mb-2">
                           Supply Chain Status
@@ -502,8 +473,6 @@ const CampaignDetails = () => {
                           </div>
                         </div>
                       </div>
-
-                      {/* Add status management buttons */}
                       {(isOwner || isDonor(item)) &&
                         item.status !== "delivered" && (
                           <div className="mt-4">
@@ -562,8 +531,6 @@ const CampaignDetails = () => {
                 styles="w-full bg-[#8c6dfd]"
                 handleClick={handleDonate}
               />
-
-              {/* Display Material Donation Button if campaign accepts material donations */}
               {campaignData.acceptsMaterialDonations && (
                 <div className="mt-[20px]">
                   <CustomButton

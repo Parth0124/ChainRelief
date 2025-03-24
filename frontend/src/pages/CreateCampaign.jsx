@@ -30,7 +30,6 @@ const CreateCampaign = () => {
     acceptsMaterialDonations: true,
     itemTypes: ["Food", "Medicine", "Clothing", "Education", "Shelter"],
     acceptedLocations: "",
-    // Added from MaterialDonationForm
     itemType: "Food",
     quantity: "",
     unit: "items",
@@ -39,7 +38,6 @@ const CreateCampaign = () => {
     expiryDate: "",
   });
 
-  // Add custom styles for the date input - green calendar icon, but normal placeholder text
   const dateInputStyles = `
     ::-webkit-calendar-picker-indicator {
       filter: invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(118%) contrast(119%);
@@ -62,7 +60,6 @@ const CreateCampaign = () => {
   `;
 
   const handleFormFieldChange = (fieldName, e) => {
-    // Special handling for checkbox
     if (fieldName === "acceptsMaterialDonations") {
       setForm({ ...form, [fieldName]: e.target.checked });
     } else {
@@ -72,7 +69,6 @@ const CreateCampaign = () => {
 
   const handleMaterialFormFieldChange = (fieldName, e) => {
     if (fieldName === "itemTypes") {
-      // For checkboxes in the material form
       const itemTypes = [...materialForm.itemTypes];
       const value = e.target.value;
 
@@ -110,8 +106,6 @@ const CreateCampaign = () => {
             target: ethers.utils.parseUnits(form.target, 18),
           });
         } else {
-          // For material campaigns, we use the material form
-          // Convert expiry date from string to timestamp if provided
           const expiryTimestamp = materialForm.expiryDate
             ? new Date(materialForm.expiryDate).getTime()
             : 0;
@@ -119,7 +113,6 @@ const CreateCampaign = () => {
           await createCampaign({
             ...materialForm,
             expiryDate: expiryTimestamp,
-            // No target amount needed for material-only campaigns, but contract expects it
             target: ethers.utils.parseUnits(
               materialForm.estimatedValue || "0",
               18
@@ -220,8 +213,6 @@ const CreateCampaign = () => {
         value={materialForm.description}
         handleChange={(e) => handleMaterialFormFieldChange("description", e)}
       />
-
-      {/* Item Type Selection */}
       <div className="w-full">
         <label className="font-epilogue font-medium text-[14px] leading-[22px] text-white mb-[10px] block">
           Item Type *
@@ -309,8 +300,6 @@ const CreateCampaign = () => {
         value={materialForm.image}
         handleChange={(e) => handleMaterialFormFieldChange("image", e)}
       />
-
-      {/* Accepted item types section - kept from original MaterialForm */}
       <div className="flex flex-col gap-[15px]">
         <label className="font-epilogue font-medium text-[14px] leading-[22px] text-white">
           What other types of donations are you accepting? *
@@ -343,8 +332,6 @@ const CreateCampaign = () => {
           ))}
         </div>
       </div>
-
-      {/* Accepted locations */}
       <FormField
         labelName="Accepted Delivery Locations (incase anyone wants to deliver donations through post,amazon,etc)"
         placeholder="e.g., New York City, Boston, Remote"
@@ -365,8 +352,6 @@ const CreateCampaign = () => {
           Start a Campaign
         </h1>
       </div>
-
-      {/* Campaign Type Selection Dropdown */}
       <div className="w-full mt-[65px] mb-[30px]">
         <label className="font-epilogue font-medium text-[14px] leading-[22px] text-white mb-[10px] block">
           Campaign Type *

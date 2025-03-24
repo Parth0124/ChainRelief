@@ -23,7 +23,6 @@ const DonateMaterials = () => {
     imageUri: "",
   });
 
-  // Load campaign details if not in state
   useEffect(() => {
     if (!state) {
       navigate(`/campaign-details/${id}`);
@@ -36,20 +35,14 @@ const DonateMaterials = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Basic validation
     if (!form.itemType || !form.quantity || !form.location) {
       alert("Please fill all required fields");
       return;
     }
-
-    // Parse expiry date to Unix timestamp if provided
     let expiryTimestamp = 0;
     if (form.expiryDate) {
       expiryTimestamp = Math.floor(new Date(form.expiryDate).getTime() / 1000);
     }
-
-    // Format donation data
     const materialDonation = {
       itemType: form.itemType,
       quantity: form.quantity,
@@ -60,8 +53,6 @@ const DonateMaterials = () => {
       imageUri: form.imageUri || "",
       expiryDate: expiryTimestamp,
     };
-
-    // Validate and convert estimatedValue to wei
     try {
       if (form.estimatedValue && !isNaN(form.estimatedValue)) {
         materialDonation.estimatedValue = ethers.utils
@@ -91,8 +82,6 @@ const DonateMaterials = () => {
   if (isLoading) {
     return <Loader />;
   }
-
-  // If no state is available, don't render the form yet
   if (!state) {
     return <Loader />;
   }

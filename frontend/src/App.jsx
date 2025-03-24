@@ -9,14 +9,13 @@ import {
   DonateMaterials,
 } from "./pages";
 import { StateContextProvider } from "./context/index";
-import { ThemeProvider } from "./context/ThemeProvider"; // Import ThemeProvider
+import { ThemeProvider } from "./context/ThemeProvider";
 
 const App = () => {
   return (
     <StateContextProvider>
       <ThemeProvider>
         {" "}
-        {/* Wrap everything in ThemeProvider */}
         <div className="relative sm:-8 p-4 bg-[#13131a] min-h-screen flex flex-row">
           <div className="sm:flex hidden mr-10 relative">
             <Sidebar />
