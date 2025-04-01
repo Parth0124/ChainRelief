@@ -160,27 +160,6 @@ const DonateMaterials = () => {
             handleChange={(e) => handleFormFieldChange("location", e)}
           />
 
-          <div className="flex flex-wrap gap-[40px]">
-            <FormField
-              labelName="Estimated Value (ETH)"
-              placeholder="e.g. 0.1"
-              inputType="number"
-              step="0.0001"
-              min="0"
-              value={form.estimatedValue}
-              handleChange={(e) => handleFormFieldChange("estimatedValue", e)}
-              styles="flex-1"
-            />
-
-            <FormField
-              labelName="Expiry Date (if applicable)"
-              inputType="date"
-              value={form.expiryDate}
-              handleChange={(e) => handleFormFieldChange("expiryDate", e)}
-              styles="flex-1"
-            />
-          </div>
-
           <FormField
             labelName="Image URL (optional)"
             placeholder="e.g. https://example.com/image.jpg"
