@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useStateContext } from "../context";
 import { CustomButton } from "./";
 
@@ -7,15 +7,58 @@ const MaterialDonationStatusManager = ({
   onClose,
   isOwner,
   isDonor,
+  onStatusChange,
 }) => {
-  const { updateDonationStatus, verifyDonation, markDonationDelivered } =
-    useStateContext();
+  const {
+    updateDonationStatus,
+    verifyDonation,
+    markDonationDelivered,
+    getMaterialDonation,
+    contract,
+    address,
+  } = useStateContext();
 
   const [isLoading, setIsLoading] = useState(false);
   const [verificationNotes, setVerificationNotes] = useState("");
   const [trackingCode, setTrackingCode] = useState(donation.trackingCode || "");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [currentStatus, setCurrentStatus] = useState(donation.status);
+  const [refreshedDonation, setRefreshedDonation] = useState(null);
+
+  useEffect(() => {
+    console.log("Donation object received:", donation);
+    console.log("Donation ID:", donation.id);
+  }, [donation]);
+
+  const refreshDonationData = async () => {
+    try {
+      if (!contract || donation.id === undefined || donation.id === null) {
+        return;
+      }
+
+      const updatedDonation = await getMaterialDonation(donation.id);
+      console.log("Refreshed donation data:", updatedDonation);
+      setRefreshedDonation(updatedDonation);
+      setCurrentStatus(updatedDonation.status);
+    } catch (error) {
+      console.error("Failed to refresh donation data:", error);
+    }
+  };
+
+  useEffect(() => {
+    refreshDonationData();
+  }, [contract, donation.id]);
+
+  const notifyStatusChange = (donationId, newStatus, trackingCode = null) => {
+    const updatedDonation = {
+      ...donation,
+      status: newStatus,
+      ...(trackingCode && { trackingCode }),
+    };
+
+    if (onStatusChange) onStatusChange(donationId, newStatus, updatedDonation);
+  };
 
   const handleUpdateStatus = async (newStatus) => {
     setIsLoading(true);
@@ -23,12 +66,25 @@ const MaterialDonationStatusManager = ({
     setSuccess("");
 
     try {
+      if (!contract) {
+        throw new Error("Contract not connected");
+      }
+
+      if (donation.id === undefined || donation.id === null) {
+        throw new Error("Invalid donation ID");
+      }
+
       await updateDonationStatus(donation.id, newStatus);
+
+      setCurrentStatus(newStatus);
       setSuccess(`Donation status updated to ${newStatus.toUpperCase()}`);
+      notifyStatusChange(donation.id, newStatus);
+      await refreshDonationData();
+
       setTimeout(() => onClose(), 2000);
     } catch (error) {
       console.error("Failed to update donation status:", error);
-      setError("Failed to update status. Please try again.");
+      setError(error.message || "Failed to update status. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -45,12 +101,27 @@ const MaterialDonationStatusManager = ({
     setSuccess("");
 
     try {
-      await verifyDonation(donation.id, verificationNotes);
+      if (!contract) {
+        throw new Error("Contract not connected");
+      }
+      if (donation.id === undefined || donation.id === null) {
+        console.error("Donation ID is invalid:", donation.id);
+        throw new Error("Invalid donation ID");
+      }
+
+      console.log("Attempting to verify donation with ID:", donation.id);
+      console.log("Connected wallet address:", address);
+      await verifyDonation(parseInt(donation.id), verificationNotes);
+
+      setCurrentStatus("verified");
       setSuccess("Donation verified successfully");
+      await refreshDonationData();
+      notifyStatusChange(donation.id, "verified");
+
       setTimeout(() => onClose(), 2000);
     } catch (error) {
       console.error("Failed to verify donation:", error);
-      setError("Failed to verify donation. Please try again.");
+      setError(error.message || "Failed to verify donation. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -62,12 +133,29 @@ const MaterialDonationStatusManager = ({
     setSuccess("");
 
     try {
-      await markDonationDelivered(donation.id);
+      if (!contract) {
+        throw new Error("Contract not connected");
+      }
+
+      if (donation.id === undefined || donation.id === null) {
+        throw new Error("Invalid donation ID");
+      }
+
+      await markDonationDelivered(parseInt(donation.id));
+
+      setCurrentStatus("delivered");
       setSuccess("Donation marked as delivered");
+
+      await refreshDonationData();
+
+      notifyStatusChange(donation.id, "delivered");
+
       setTimeout(() => onClose(), 2000);
     } catch (error) {
       console.error("Failed to mark donation as delivered:", error);
-      setError("Failed to mark as delivered. Please try again.");
+      setError(
+        error.message || "Failed to mark as delivered. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -84,21 +172,59 @@ const MaterialDonationStatusManager = ({
     setSuccess("");
 
     try {
-      await updateDonationStatus(donation.id, "in-transit", trackingCode);
+      if (!contract) {
+        throw new Error("Contract not connected");
+      }
+
+      if (donation.id === undefined || donation.id === null) {
+        throw new Error("Invalid donation ID");
+      }
+
+      await updateDonationStatus(
+        parseInt(donation.id),
+        "in-transit",
+        trackingCode
+      );
+
+      setCurrentStatus("in-transit");
       setSuccess("Tracking code updated and status changed to IN-TRANSIT");
+
+      await refreshDonationData();
+
+      notifyStatusChange(donation.id, "in-transit", trackingCode);
+
       setTimeout(() => onClose(), 2000);
     } catch (error) {
       console.error("Failed to update tracking code:", error);
-      setError("Failed to update tracking code. Please try again.");
+      setError(
+        error.message || "Failed to update tracking code. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
-  const renderStatusOptions = () => {
-    switch (donation.status) {
+  const getStatusColor = (status) => {
+    switch (status) {
       case "pledged":
-        return isOwner ? (
+        return "text-yellow-500";
+      case "verified":
+        return "text-blue-500";
+      case "in-transit":
+        return "text-purple-500";
+      case "delivered":
+        return "text-green-500";
+      case "cancelled":
+        return "text-red-500";
+      default:
+        return "text-white";
+    }
+  };
+
+  const renderStatusOptions = () => {
+    switch (currentStatus) {
+      case "pledged":
+        return (
           <div className="flex flex-col gap-3">
             <p className="font-epilogue text-[14px] text-[#808191] mb-2">
               Verify this donation by confirming you accept the pledged items
@@ -116,32 +242,22 @@ const MaterialDonationStatusManager = ({
               handleClick={handleVerifyDonation}
               disabled={isLoading}
             />
-          </div>
-        ) : isDonor ? (
-          <div>
-            <p className="font-epilogue text-[14px] text-[#808191] mb-4">
-              Your donation is waiting for verification by the campaign owner.
-            </p>
             <CustomButton
               btnType="button"
               title="Cancel Donation"
-              styles="bg-red-500 w-full"
+              styles="bg-red-500 w-full mt-2"
               handleClick={() => handleUpdateStatus("cancelled")}
               disabled={isLoading}
             />
           </div>
-        ) : (
-          <p className="font-epilogue text-[14px] text-[#808191]">
-            Only the campaign owner can verify this donation.
-          </p>
         );
 
       case "verified":
-        return isDonor ? (
+        return (
           <div className="flex flex-col gap-3">
             <p className="font-epilogue text-[14px] text-[#808191] mb-2">
-              Your donation has been verified. Update the status to "In Transit"
-              when you ship the items.
+              This donation has been verified. Update the status to "In Transit"
+              when items are shipped.
             </p>
             <input
               type="text"
@@ -157,23 +273,22 @@ const MaterialDonationStatusManager = ({
               handleClick={handleUpdateTrackingCode}
               disabled={isLoading}
             />
+            <CustomButton
+              btnType="button"
+              title="Cancel Donation"
+              styles="bg-red-500 w-full mt-2"
+              handleClick={() => handleUpdateStatus("cancelled")}
+              disabled={isLoading}
+            />
           </div>
-        ) : isOwner ? (
-          <p className="font-epilogue text-[14px] text-[#808191]">
-            Waiting for the donor to ship the items.
-          </p>
-        ) : (
-          <p className="font-epilogue text-[14px] text-[#808191]">
-            This donation has been verified and is awaiting shipment.
-          </p>
         );
 
       case "in-transit":
-        return isOwner ? (
+        return (
           <div className="flex flex-col gap-3">
             <p className="font-epilogue text-[14px] text-[#808191] mb-2">
-              The donation is on its way to you. Mark as delivered when you
-              receive it.
+              The donation is currently in transit. Mark as delivered when
+              received.
             </p>
             {donation.trackingCode && (
               <p className="font-epilogue text-[14px] text-white mb-4">
@@ -187,27 +302,14 @@ const MaterialDonationStatusManager = ({
               handleClick={handleMarkDelivered}
               disabled={isLoading}
             />
+            <CustomButton
+              btnType="button"
+              title="Cancel Donation"
+              styles="bg-red-500 w-full mt-2"
+              handleClick={() => handleUpdateStatus("cancelled")}
+              disabled={isLoading}
+            />
           </div>
-        ) : isDonor ? (
-          <div>
-            <p className="font-epilogue text-[14px] text-[#808191] mb-2">
-              Your donation is in transit. The campaign owner will mark it as
-              delivered when received.
-            </p>
-            {donation.trackingCode && (
-              <p className="font-epilogue text-[14px] text-white mb-4">
-                Tracking Code: {donation.trackingCode}
-              </p>
-            )}
-            <p className="font-epilogue text-[14px] text-[#808191]">
-              Keep track of your shipment and let the campaign owner know if
-              there are any issues.
-            </p>
-          </div>
-        ) : (
-          <p className="font-epilogue text-[14px] text-[#808191]">
-            This donation is in transit to the campaign owner.
-          </p>
         );
 
       case "delivered":
@@ -271,23 +373,13 @@ const MaterialDonationStatusManager = ({
             {donation.quantity} {donation.unit}
           </div>
 
-          <div className="font-epilogue text-[#808191]">Current Status:</div>
+          <div className="font-epilogue text-[#808191]">Status:</div>
           <div
-            className={`font-epilogue font-semibold ${
-              donation.status === "pledged"
-                ? "text-yellow-500"
-                : donation.status === "verified"
-                ? "text-blue-500"
-                : donation.status === "in-transit"
-                ? "text-purple-500"
-                : donation.status === "delivered"
-                ? "text-green-500"
-                : donation.status === "cancelled"
-                ? "text-red-500"
-                : "text-white"
-            }`}
+            className={`font-epilogue font-semibold ${getStatusColor(
+              currentStatus
+            )}`}
           >
-            {donation.status.toUpperCase()}
+            {currentStatus.toUpperCase()}
           </div>
 
           <div className="font-epilogue text-[#808191]">Location:</div>
@@ -301,6 +393,11 @@ const MaterialDonationStatusManager = ({
               </div>
             </>
           )}
+
+          <div className="font-epilogue text-[#808191]">Donation ID:</div>
+          <div className="font-epilogue text-white">
+            {donation.id !== undefined ? donation.id : "Not assigned"}
+          </div>
         </div>
       </div>
       {error && (
@@ -315,7 +412,7 @@ const MaterialDonationStatusManager = ({
         </div>
       )}
       {renderStatusOptions()}
-      {donation.status !== "delivered" && donation.status !== "cancelled" && (
+      {currentStatus !== "delivered" && currentStatus !== "cancelled" && (
         <CustomButton
           btnType="button"
           title="Cancel"

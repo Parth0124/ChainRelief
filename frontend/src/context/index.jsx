@@ -50,7 +50,7 @@ export const StateContextProvider = ({ children }) => {
       const data = await createCampaign({
         args: [
           address,
-          form.title, 
+          form.title,
           form.description,
           form.target,
           new Date(form.deadline).getTime(),
@@ -159,14 +159,28 @@ export const StateContextProvider = ({ children }) => {
 
   const verifyDonation = async (donationId, notes) => {
     try {
+      console.log("Verifying donation with ID:", donationId);
+      console.log("Verification notes:", notes);
+      console.log("Connected wallet address:", address);
+
+      // First, get the donation details to check the campaign ID
+      const donation = await contract.call("getMaterialDonation", [donationId]);
+      console.log("Donation campaign ID:", donation.campaignId.toNumber());
+
+      // Get the campaign to check the owner
+      const campaign = await contract.call("campaigns", [
+        donation.campaignId.toNumber(),
+      ]);
+      console.log("Campaign owner:", campaign.owner);
+
       const data = await verifyMaterialDonation({
         args: [donationId, notes],
       });
-
       console.log("donation verified successfully", data);
       return data;
     } catch (error) {
       console.log("donation verification failed", error);
+      console.log("Error details:", error.message);
       throw error;
     }
   };
@@ -218,6 +232,16 @@ export const StateContextProvider = ({ children }) => {
     }
   };
 
+  const isCampaignOwner = async (campaignId) => {
+    try {
+      const campaign = await contract.call("campaigns", [campaignId]);
+      return campaign.owner.toLowerCase() === address.toLowerCase();
+    } catch (error) {
+      console.error("Error checking campaign ownership:", error);
+      return false;
+    }
+  };
+
   const getCampaignMaterialDonations = async (campaignId) => {
     try {
       const donations = await contract.call("getCampaignMaterialDonations", [
@@ -266,6 +290,7 @@ export const StateContextProvider = ({ children }) => {
         donate,
         getDonations,
         createMaterialDonation,
+        isCampaignOwner,
         updateDonationStatus,
         verifyDonation,
         markDonationDelivered,
